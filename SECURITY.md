@@ -30,6 +30,16 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration stores and sends:
+
+- `/data/icecast-state.json` holds what the integration saw of each mount
+  point (on air or not, the title, the start of the stream, the peak of the
+  day and the listener thresholds reached). No secret is written there.
+- No password is asked: the integration only reads the public status page of
+  Icecast (`/status-json.xsl`), never its admin pages. Redirects are not
+  followed.
+- The container only talks to that Icecast server and to Gladys.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+and the Icecast server the integration talks to.

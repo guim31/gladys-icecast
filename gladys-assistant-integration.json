@@ -1,177 +1,705 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Icecast",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Your Icecast streams in Gladys: on air, listeners, current title, and scenes on every change.",
+    "fr": "Vos flux Icecast dans Gladys : antenne, auditeurs, titre en cours et scènes à chaque changement.",
+    "de": "Deine Icecast-Streams in Gladys: Sendestatus, Zuhörer, aktueller Titel, Szenen bei jeder Änderung.",
+    "es": "Sus flujos Icecast en Gladys: antena, oyentes, canción actual y escenas en cada cambio."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-icecast:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-icecast/main/cover.png",
+  "categories": ["multimedia"],
   "transports": ["local", "cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your Icecast server",
+        "fr": "Votre serveur Icecast",
+        "de": "Dein Icecast-Server",
+        "es": "Su servidor Icecast"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Enter the address of your Icecast server (2.4 or newer). Its mount points on air appear in the Discover tab: add the ones you want. No password: the integration reads the public status page.",
+        "fr": "Saisissez l'adresse de votre serveur Icecast (2.4 ou plus récent). Ses points de montage à l'antenne apparaissent dans l'onglet Découverte : ajoutez ceux que vous voulez. Aucun mot de passe : l'intégration lit la page de statut publique.",
+        "de": "Gib die Adresse deines Icecast-Servers ein (2.4 oder neuer). Seine Mountpoints auf Sendung erscheinen im Tab „Entdecken“: Füge die gewünschten hinzu. Kein Passwort: Die Integration liest die öffentliche Statusseite.",
+        "es": "Introduzca la dirección de su servidor Icecast (2.4 o posterior). Sus puntos de montaje en antena aparecen en la pestaña Descubrir: añada los que desee. Sin contraseña: la integración lee la página de estado pública."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-icecast/blob/main/docs/en.md",
+          "label": {
+            "en": "Setup guide",
+            "fr": "Guide d'installation",
+            "de": "Einrichtungsanleitung",
+            "es": "Guía de instalación"
+          }
+        },
+        {
+          "url": "https://icecast.org/docs/",
+          "label": {
+            "en": "Icecast documentation",
+            "fr": "Documentation d'Icecast",
+            "de": "Icecast-Dokumentation",
+            "es": "Documentación de Icecast"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "url",
+      "type": "string",
+      "label": {
+        "en": "Icecast address",
+        "fr": "Adresse d'Icecast",
+        "de": "Icecast-Adresse",
+        "es": "Dirección de Icecast"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "Address of the Icecast server, with its port (8000 by default).",
+        "fr": "Adresse du serveur Icecast, avec son port (8000 par défaut).",
+        "de": "Adresse des Icecast-Servers, mit seinem Port (standardmäßig 8000).",
+        "es": "Dirección del servidor Icecast, con su puerto (8000 por defecto)."
+      },
+      "placeholder": {
+        "en": "e.g. http://192.168.1.2:8000",
+        "fr": "ex. http://192.168.1.2:8000",
+        "de": "z. B. http://192.168.1.2:8000",
+        "es": "p. ej. http://192.168.1.2:8000"
+      },
+      "required": true
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "key": "options",
+      "type": "section",
+      "label": {
+        "en": "Options",
+        "fr": "Options",
+        "de": "Optionen",
+        "es": "Opciones"
+      }
     },
     {
-      "key": "unit",
+      "key": "poll_interval",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often Icecast is read: one light request for all the mount points.",
+        "fr": "À quelle fréquence Icecast est lu : une requête légère pour tous les points de montage.",
+        "de": "Wie oft Icecast gelesen wird: eine leichte Anfrage für alle Mountpoints.",
+        "es": "Con qué frecuencia se lee Icecast: una petición ligera para todos los puntos de montaje."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "15",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "10",
+          "label": {
+            "en": "10 seconds",
+            "fr": "10 secondes",
+            "de": "10 Sekunden",
+            "es": "10 segundos"
+          }
+        },
+        {
+          "value": "15",
+          "label": {
+            "en": "15 seconds",
+            "fr": "15 secondes",
+            "de": "15 Sekunden",
+            "es": "15 segundos"
+          }
+        },
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes",
+            "de": "30 Sekunden",
+            "es": "30 segundos"
+          }
+        },
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the names",
+        "fr": "Langue des noms",
+        "de": "Sprache der Namen",
+        "es": "Idioma de los nombres"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Language of the feature names (set when the device is added) and of the scene results.",
+        "fr": "Langue des noms des fonctionnalités (fixés à l'ajout de l'appareil) et des résultats de scène.",
+        "de": "Sprache der Funktionsnamen (beim Anlegen des Geräts festgelegt) und der Szenen-Ergebnisse.",
+        "es": "Idioma de los nombres de las funciones (fijados al añadir el dispositivo) y de los resultados de escena."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
       "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "stream_started",
+      "label": {
+        "en": "A stream starts",
+        "fr": "Un flux démarre",
+        "de": "Ein Stream startet",
+        "es": "Empieza un flujo"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A source connects to the mount point and goes on air.",
+        "fr": "Une source se connecte au point de montage et prend l'antenne.",
+        "de": "Eine Quelle verbindet sich mit dem Mountpoint und geht auf Sendung.",
+        "es": "Una fuente se conecta al punto de montaje y sale en antena."
       },
       "fields": [
         {
-          "key": "device",
+          "key": "mount",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": {
+            "en": "Mount point",
+            "fr": "Point de montage",
+            "de": "Mountpoint",
+            "es": "Punto de montaje"
+          },
+          "required": false
+        }
+      ],
+      "variables": [
+        {
+          "key": "mount_name",
+          "type": "string",
+          "label": {
+            "en": "Stream",
+            "fr": "Flux",
+            "de": "Stream",
+            "es": "Flujo"
+          }
         },
         {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "key": "text",
+          "type": "string",
+          "label": {
+            "en": "Song",
+            "fr": "Titre complet",
+            "de": "Titel",
+            "es": "Canción"
+          }
+        }
+      ]
+    },
+    {
+      "key": "stream_stopped",
+      "label": {
+        "en": "A stream stops",
+        "fr": "Un flux s'arrête",
+        "de": "Ein Stream stoppt",
+        "es": "Se detiene un flujo"
+      },
+      "description": {
+        "en": "The mount point has been off air for a minute (or Icecast silent), with the length of the stream.",
+        "fr": "Le point de montage n'émet plus depuis une minute (ou Icecast ne répond plus), avec la durée du flux.",
+        "de": "Der Mountpoint ist seit einer Minute nicht auf Sendung (oder Icecast stumm), mit der Dauer des Streams.",
+        "es": "El punto de montaje lleva un minuto sin emitir (o Icecast no responde), con la duración del flujo."
+      },
+      "fields": [
+        {
+          "key": "mount",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Mount point",
+            "fr": "Point de montage",
+            "de": "Mountpoint",
+            "es": "Punto de montaje"
+          },
+          "required": false
+        }
+      ],
+      "variables": [
+        {
+          "key": "mount_name",
+          "type": "string",
+          "label": {
+            "en": "Stream",
+            "fr": "Flux",
+            "de": "Stream",
+            "es": "Flujo"
+          }
+        },
+        {
+          "key": "duration_minutes",
+          "type": "number",
+          "label": {
+            "en": "Duration (minutes)",
+            "fr": "Durée (minutes)",
+            "de": "Dauer (Minuten)",
+            "es": "Duración (minutos)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "track_changed",
+      "label": {
+        "en": "A new song plays",
+        "fr": "Un nouveau titre passe",
+        "de": "Ein neuer Titel läuft",
+        "es": "Suena una nueva canción"
+      },
+      "description": {
+        "en": "The source sends another title.",
+        "fr": "La source envoie un autre titre.",
+        "de": "Die Quelle sendet einen anderen Titel.",
+        "es": "La fuente envía otro título."
+      },
+      "fields": [
+        {
+          "key": "mount",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Mount point",
+            "fr": "Point de montage",
+            "de": "Mountpoint",
+            "es": "Punto de montaje"
+          },
+          "required": false
+        }
+      ],
+      "variables": [
+        {
+          "key": "mount_name",
+          "type": "string",
+          "label": {
+            "en": "Stream",
+            "fr": "Flux",
+            "de": "Stream",
+            "es": "Flujo"
+          }
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "label": {
+            "en": "Song",
+            "fr": "Titre complet",
+            "de": "Titel",
+            "es": "Canción"
+          }
+        },
+        {
+          "key": "artist",
+          "type": "string",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel des Songs",
+            "es": "Título"
+          }
+        }
+      ]
+    },
+    {
+      "key": "listeners_reached",
+      "label": {
+        "en": "Listeners reach a threshold",
+        "fr": "Les auditeurs atteignent un seuil",
+        "de": "Zuhörer erreichen eine Schwelle",
+        "es": "Los oyentes alcanzan un umbral"
+      },
+      "description": {
+        "en": "The number of listeners of the mount point reaches the chosen threshold, once a day.",
+        "fr": "Le nombre d'auditeurs du point de montage atteint le seuil choisi, une fois par jour.",
+        "de": "Die Zuhörerzahl des Mountpoints erreicht die gewählte Schwelle, einmal pro Tag.",
+        "es": "El número de oyentes del punto de montaje alcanza el umbral elegido, una vez al día."
+      },
+      "fields": [
+        {
+          "key": "mount",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Mount point",
+            "fr": "Point de montage",
+            "de": "Mountpoint",
+            "es": "Punto de montaje"
+          },
+          "required": false
+        },
+        {
+          "key": "threshold",
+          "type": "select",
+          "label": {
+            "en": "Threshold",
+            "fr": "Seuil",
+            "de": "Schwelle",
+            "es": "Umbral"
+          },
+          "required": true,
+          "default": "10",
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "1",
+              "label": {
+                "en": "1",
+                "fr": "1",
+                "de": "1",
+                "es": "1"
+              }
+            },
+            {
+              "value": "5",
+              "label": {
+                "en": "5",
+                "fr": "5",
+                "de": "5",
+                "es": "5"
+              }
+            },
+            {
+              "value": "10",
+              "label": {
+                "en": "10",
+                "fr": "10",
+                "de": "10",
+                "es": "10"
+              }
+            },
+            {
+              "value": "25",
+              "label": {
+                "en": "25",
+                "fr": "25",
+                "de": "25",
+                "es": "25"
+              }
+            },
+            {
+              "value": "50",
+              "label": {
+                "en": "50",
+                "fr": "50",
+                "de": "50",
+                "es": "50"
+              }
+            },
+            {
+              "value": "100",
+              "label": {
+                "en": "100",
+                "fr": "100",
+                "de": "100",
+                "es": "100"
+              }
+            },
+            {
+              "value": "250",
+              "label": {
+                "en": "250",
+                "fr": "250",
+                "de": "250",
+                "es": "250"
+              }
+            },
+            {
+              "value": "500",
+              "label": {
+                "en": "500",
+                "fr": "500",
+                "de": "500",
+                "es": "500"
+              }
+            },
+            {
+              "value": "1000",
+              "label": {
+                "en": "1000",
+                "fr": "1000",
+                "de": "1000",
+                "es": "1000"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "mount_name",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Stream",
+            "fr": "Flux",
+            "de": "Stream",
+            "es": "Flujo"
+          }
+        },
+        {
+          "key": "threshold",
+          "type": "number",
+          "label": {
+            "en": "Threshold",
+            "fr": "Seuil",
+            "de": "Schwelle",
+            "es": "Umbral"
+          }
+        },
+        {
+          "key": "listeners",
+          "type": "number",
+          "label": {
+            "en": "Listeners",
+            "fr": "Auditeurs",
+            "de": "Zuhörer",
+            "es": "Oyentes"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "get_now_playing",
+      "label": {
+        "en": "Now playing",
+        "fr": "Titre en cours",
+        "de": "Aktueller Titel",
+        "es": "Canción actual"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Reads a mount point for the next actions: on air, song, listeners, and a ready-made sentence.",
+        "fr": "Lit un point de montage pour les actions suivantes : antenne, titre, auditeurs, et une phrase toute prête.",
+        "de": "Liest einen Mountpoint für die nächsten Aktionen: Sendestatus, Titel, Zuhörer und einen fertigen Satz.",
+        "es": "Lee un punto de montaje para las siguientes acciones: antena, canción, oyentes y una frase lista."
+      },
+      "timeout_seconds": 30,
       "fields": [
         {
-          "key": "device",
+          "key": "mount",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": {
+            "en": "Mount point",
+            "fr": "Point de montage",
+            "de": "Mountpoint",
+            "es": "Punto de montaje"
+          },
           "required": true
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
+          "key": "online",
           "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "label": {
+            "en": "On air",
+            "fr": "À l'antenne",
+            "de": "Auf Sendung",
+            "es": "En antena"
+          }
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "label": {
+            "en": "Song",
+            "fr": "Titre complet",
+            "de": "Titel",
+            "es": "Canción"
+          }
+        },
+        {
+          "key": "artist",
+          "type": "string",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel des Songs",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "listeners",
+          "type": "number",
+          "label": {
+            "en": "Listeners",
+            "fr": "Auditeurs",
+            "de": "Zuhörer",
+            "es": "Oyentes"
+          }
+        },
+        {
+          "key": "peak",
+          "type": "number",
+          "label": {
+            "en": "Peak listeners today",
+            "fr": "Pic d'auditeurs du jour",
+            "de": "Zuhörerspitze heute",
+            "es": "Pico de oyentes de hoy"
+          }
+        },
+        {
+          "key": "bitrate",
+          "type": "number",
+          "label": {
+            "en": "Bitrate (kb/s)",
+            "fr": "Débit (kb/s)",
+            "de": "Bitrate (kb/s)",
+            "es": "Tasa de bits (kb/s)"
+          }
+        },
+        {
+          "key": "duration_minutes",
+          "type": "number",
+          "label": {
+            "en": "On air for (minutes)",
+            "fr": "À l'antenne depuis (minutes)",
+            "de": "Auf Sendung seit (Minuten)",
+            "es": "En antena desde hace (minutos)"
+          }
+        },
+        {
+          "key": "sentence",
+          "type": "string",
+          "label": {
+            "en": "Sentence",
+            "fr": "Phrase",
+            "de": "Satz",
+            "es": "Frase"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "mounts",
+      "label": {
+        "en": "Icecast streams",
+        "fr": "Flux Icecast",
+        "de": "Icecast-Streams",
+        "es": "Flujos Icecast"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "The mount points on air, their listeners and the current song.",
+        "fr": "Les points de montage à l'antenne, leurs auditeurs et le titre en cours.",
+        "de": "Die Mountpoints auf Sendung, ihre Zuhörer und der aktuelle Titel.",
+        "es": "Los puntos de montaje en antena, sus oyentes y la canción actual."
+      },
+      "icon": "radio",
+      "settings": [
+        {
+          "key": "mount",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Mount point",
+            "fr": "Point de montage",
+            "de": "Mountpoint",
+            "es": "Punto de montaje"
+          },
+          "required": false,
+          "description": {
+            "en": "Empty: every mount point.",
+            "fr": "Vide : tous les points de montage.",
+            "de": "Leer: alle Mountpoints.",
+            "es": "Vacío: todos los puntos de montaje."
+          }
+        }
+      ]
     }
   ]
 }

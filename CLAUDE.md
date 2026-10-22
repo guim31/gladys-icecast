@@ -31,16 +31,20 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+index.js                          SDK wiring only: src/app.js registers the handlers before connect()
+src/app.js                        every SDK handler -> the hub (also used by the tests)
+src/hub.js                        reading timer, per-mount transitions (grace), milestones -> scene events, views
+src/devices.js                    one device per mount point: features, names, values
+src/icecast/client.js             /status-json.xsl (fetch), errors by kind, normalization
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
-src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/widgets.js                    dashboard widget `mounts` (manifest `widgets`)
+src/texts.js                      connection, error, state, report and action texts (4 languages)
+src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults), address, local/cloud
+src/store.js, src/problems.js     /data/icecast-state.json; one log line per repeated failure
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+                                  and helpers/fakeIcecast.js (built on test/fixtures/icecast)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +74,10 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, widget content, feature names, scene outputs, manifest texts, and
+  `docs/en.md`, `docs/fr.md`, `docs/de.md`, `docs/es.md`, kept in sync
+  (`test/i18n.test.js` checks the languages and the doc sections).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -197,6 +203,45 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Les filtres de scène ne font qu'égalité et appartenance : un seuil reste le travail d'un capteur.
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - `gladys_version` `>=5.1.0` dès qu'il y a widgets, déclencheurs ou actions de scène.
+
+## Icecast (propre à ce dépôt)
+
+- **Statut** (vérifié sur Icecast 2.4.4, image `libretime/icecast:2.4.4`, le 22/10/2026 ; réponses
+  dans `test/fixtures/icecast`) : `GET /status-json.xsl`, public, sans mot de passe. `icestats.source`
+  est **un objet pour un point de montage, un tableau pour plusieurs, absent pour aucun**. Seuls les
+  points de montage où une source diffuse sont listés (ni les montages `<hidden>`, ni ceux sans
+  source) : « hors antenne » = absent de la liste, confirmé après 60 s (`graceMs`).
+- **Point de montage** : chemin de `listenurl` (l'hôte est le `<hostname>` de la configuration
+  d'Icecast, souvent `localhost` : ne jamais s'en servir pour joindre le serveur). Identifiant de l'appareil `mount:<chemin sans le premier « / », chaque octet hors [A-Za-z0-9.-] écrit `_xx` en hexadécimal>` (injectif : `/live/a b` et `/live_a_b` restent distincts).
+  Les points de montage vus sont gardés dans `/data` (un flux arrêté reste un appareil), oubliés
+  après 30 jours sans être vus s'ils ne sont pas des appareils dans Gladys.
+- **Titre** : une source MP3 (ffmpeg, BUTT…) envoie un seul `title` « Artiste - Titre » (mise à jour
+  par `/admin/metadata?mode=updinfo&song=…`, qui exige l'identifiant **admin** sur l'image libretime :
+  `source:<mot de passe>` répond « Mountpoint will not accept URL updates ») ; une source Ogg/Opus
+  envoie `artist` et `title` à part. Le code coupe au premier « - » quand `artist` manque. Sans
+  métadonnées, `title` est absent.
+- **Transitions** (relecture du 22/10) : une première lecture ratée ne pose rien (sinon la suivante
+  annonce tous les flux) ; au premier passage après un redémarrage de l'intégration, un
+  `stream_start_iso8601` postérieur de plus de `graceMs` au départ connu = flux relancé entre-temps
+  (`stream_stopped` puis `stream_started`) ; un flux hors antenne à minuit repart de zéro (pic et
+  seuils), un flux à l'antenne garde ses seuils déjà atteints ; un nouveau titre au démarrage
+  déclenche aussi `track_changed`. Le cœur convertit lui-même les filtres de déclencheur selon le
+  type du champ (`coerceSceneValue` de `publishSceneEvent`) : `threshold` numérique contre un
+  `select` texte ne pose pas de problème.
+- **Débit** : absent pour une source MP3 de ffmpeg ; `ice-bitrate` (kb/s) et `audio_bitrate` (b/s)
+  pour Ogg. Sans valeur, la fonctionnalité Débit ne reçoit rien (pas de faux 0).
+- `server_name` vaut « Unspecified name » quand la source n'en envoie pas : traité comme vide.
+- `/admin/stats` (XML, authentification admin) n'est pas utilisé : il ne donne que des compteurs
+  globaux et l'adresse IP des sources, sans intérêt pour les scènes, et demanderait de stocker le mot
+  de passe admin.
+- **Icecast 2.5.0** est sorti (fin du support de la 2.4.4 annoncée sur icecast.org) : son
+  `status-json.xsl` n'a **pas** été vérifié ici.
+- Session de test : réseau `gladys-test-icecast`, `mirror.gcr.io/libretime/icecast:2.4.4` (variables
+  `ICECAST_SOURCE_PASSWORD`, `ICECAST_ADMIN_PASSWORD`), sources
+  `mirror.gcr.io/linuxserver/ffmpeg` (`-re -f lavfi -i sine=… -f mp3 icecast://source:<mdp>@…/radio.mp3`,
+  et `-c:a libvorbis -metadata title=… -f ogg …/lounge.ogg`), auditeurs : un conteneur
+  `curlimages/curl` lancé avec `--entrypoint sleep … infinity`, puis `docker exec -d … curl -o /dev/null
+<flux>` (sur une machine chargée, `docker run` d'un curl par auditeur peut rester bloqué).
 
 ## Store
 
