@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-22
+
 ### Added
 
 - Each mount point of an Icecast server (2.4 or later) as a Gladys device: on
@@ -27,4 +29,5 @@ the notes of the version's GitHub Release.
 - A "Test the connection" action, texts in English, French, German and
   Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-icecast/commits/main
+[Unreleased]: https://github.com/guim31/gladys-icecast/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-icecast/releases/tag/v1.0.0
