@@ -1,33 +1,59 @@
+// -----------------------------------------------------------------------------
+// The configuration: the address as users type or paste it, the local or cloud
+// badge, the defaults.
+// -----------------------------------------------------------------------------
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeConfig, DEFAULT_CONFIG } from '../src/config.js';
+import { isLocalAddress, normalizeConfig, parseServerUrl } from '../src/config.js';
 
-test('normalizeConfig returns the defaults when called with no argument', () => {
-  assert.deepEqual(normalizeConfig(), DEFAULT_CONFIG);
+test('the address: bare host, port, https, a copied page or stream, a sub-path', () => {
+  assert.equal(parseServerUrl('192.0.2.10:8000'), 'http://192.0.2.10:8000');
+  assert.equal(parseServerUrl(' https://radio.example.org/ '), 'https://radio.example.org');
+  assert.equal(parseServerUrl('http://192.0.2.10:8000/status.xsl'), 'http://192.0.2.10:8000');
+  assert.equal(parseServerUrl('http://192.0.2.10:8000/status-json.xsl'), 'http://192.0.2.10:8000');
+  assert.equal(parseServerUrl('http://192.0.2.10:8000/admin/stats.xsl'), 'http://192.0.2.10:8000');
+  assert.equal(parseServerUrl('http://192.0.2.10:8000/admin/'), 'http://192.0.2.10:8000');
+  assert.equal(
+    parseServerUrl('https://example.org/icecast/radio.mp3'),
+    'https://example.org/icecast',
+  );
+  assert.equal(parseServerUrl('http://192.0.2.10:8000/lounge.OGG'), 'http://192.0.2.10:8000');
+  assert.equal(parseServerUrl('https://example.org/icecast/'), 'https://example.org/icecast');
+  assert.equal(parseServerUrl('ftp://example.org'), null);
+  assert.equal(parseServerUrl('http://admin:pw@example.org'), null, 'no credentials in the URL');
+  assert.equal(parseServerUrl('http://'), null);
 });
 
-test('normalizeConfig keeps user values over the defaults', () => {
-  const config = normalizeConfig({ latitude: 45.5, longitude: -73.6, unit: 'fahrenheit' });
-  assert.equal(config.latitude, 45.5);
-  assert.equal(config.longitude, -73.6);
-  assert.equal(config.unit, 'fahrenheit');
+test('local or cloud, from the address', () => {
+  for (const url of [
+    'http://192.168.1.2:8080',
+    'http://10.0.0.5',
+    'http://172.20.0.2',
+    'http://icecast:8000',
+    'http://icecast.local',
+    'http://[fd00::2]:8080',
+    'http://100.101.102.103',
+  ]) {
+    assert.equal(isLocalAddress(url), true, url);
+  }
+  for (const url of ['https://live.example.org', 'http://8.8.8.8:8080', 'http://172.32.0.1']) {
+    assert.equal(isLocalAddress(url), false, url);
+  }
 });
 
-test('normalizeConfig coerces numeric strings coming from a form', () => {
-  const config = normalizeConfig({ latitude: '48.8', longitude: '2.3', poll_frequency: '600' });
-  assert.equal(config.latitude, 48.8);
-  assert.equal(config.longitude, 2.3);
-  assert.equal(config.poll_frequency, 600);
-  assert.equal(typeof config.poll_frequency, 'number');
-});
-
-test('normalizeConfig falls back to the default for a missing numeric field', () => {
-  const config = normalizeConfig({ unit: 'celsius' });
-  assert.equal(config.poll_frequency, DEFAULT_CONFIG.poll_frequency);
-});
-
-test('GLADYS_PREFER_LOCAL defaults to true and only an explicit false disables it', () => {
-  assert.equal(normalizeConfig().GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: true }).GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: false }).GLADYS_PREFER_LOCAL, false);
+test('normalization: defaults, unknown choices', () => {
+  assert.deepEqual(normalizeConfig({}), {
+    url: '',
+    pollIntervalMs: 15_000,
+    language: 'fr',
+  });
+  const config = normalizeConfig({
+    url: 'nope://',
+    poll_interval: '7',
+    language: 'it',
+  });
+  assert.equal(config.url, null);
+  assert.equal(config.pollIntervalMs, 15_000);
+  assert.equal(config.language, 'fr');
 });

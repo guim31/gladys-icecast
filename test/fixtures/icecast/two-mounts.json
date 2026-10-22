@@ -1,0 +1,45 @@
+{
+  "icestats": {
+    "admin": "icemaster@localhost",
+    "host": "localhost",
+    "location": "Earth",
+    "server_id": "Icecast 2.4.4",
+    "server_start": "Thu, 22 Oct 2026 21:02:32 +0000",
+    "server_start_iso8601": "2026-10-22T21:02:32+0000",
+    "source": [
+      {
+        "artist": "Miles Davis",
+        "audio_bitrate": 96000,
+        "audio_channels": 1,
+        "audio_samplerate": 44100,
+        "genre": "various",
+        "ice-bitrate": 96,
+        "listener_peak": 1,
+        "listeners": 1,
+        "listenurl": "http://localhost:8000/lounge.ogg",
+        "server_description": "Unspecified description",
+        "server_name": "Lounge",
+        "server_type": "application/ogg",
+        "stream_start": "Thu, 22 Oct 2026 21:03:07 +0000",
+        "stream_start_iso8601": "2026-10-22T21:03:07+0000",
+        "subtype": "Vorbis",
+        "title": "Blue in Green",
+        "dummy": null
+      },
+      {
+        "genre": "Jazz",
+        "listener_peak": 3,
+        "listeners": 3,
+        "listenurl": "http://localhost:8000/radio.mp3",
+        "server_description": "Test radio",
+        "server_name": "Radio Gladys",
+        "server_type": "audio/mpeg",
+        "server_url": "http://radio.example.org",
+        "stream_start": "Thu, 22 Oct 2026 21:03:05 +0000",
+        "stream_start_iso8601": "2026-10-22T21:03:05+0000",
+        "title": "Daft Punk - Get Lucky (feat. \"Pharrell\") été",
+        "dummy": null
+      }
+    ]
+  }
+}
