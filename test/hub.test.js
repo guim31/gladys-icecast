@@ -524,3 +524,79 @@ test('Gladys restarts: everything is sent again', async (t) => {
   await world.hub.resync(world.hub.config);
   assert.ok(world.fake.states.length > before);
 });
+
+test('a first reading that fails announces nothing once Icecast answers', async (t) => {
+  const icecast = new FakeIcecast();
+  icecast.setListeners(12);
+  icecast.failure = 'down';
+  const world = await createWorld({ icecast });
+  t.after(() => world.app.stop());
+  icecast.failure = null;
+  await world.hub.pollNow();
+  assert.deepEqual(world.fake.sceneEvents, []);
+  assert.equal(world.fake.discoveredDevices.length, 1);
+});
+
+test('a stream off air at midnight starts the day from zero', async (t) => {
+  const world = await addedWorld(t);
+  world.icecast.setListeners(30);
+  await world.hub.pollNow();
+  world.icecast.stop();
+  await world.hub.pollNow();
+  world.clock.advance(MINUTE);
+  await world.hub.pollNow();
+  // The next morning (18:00 + 15 h): no peak of yesterday, then back with 12.
+  world.clock.advance(15 * 60 * MINUTE);
+  await world.hub.pollNow();
+  assert.equal(state(world, FEATURE_KEYS.LISTENERS_PEAK), 0);
+  const before = events(world, TRIGGERS.LISTENERS).length;
+  world.icecast.start('/radio.mp3', { name: 'Radio Gladys', listeners: 12 });
+  await world.hub.pollNow();
+  assert.deepEqual(
+    events(world, TRIGGERS.LISTENERS)
+      .slice(before)
+      .map((event) => event.data.threshold),
+    [1, 5, 10],
+  );
+  assert.equal(state(world, FEATURE_KEYS.LISTENERS_PEAK), 12);
+});
+
+test('a stream restarted while the integration was stopped: stopped, then started', async (t) => {
+  const clock = createClock();
+  const icecast = new FakeIcecast({ now: clock.now });
+  const first = await addedWorld(t, { clock, icecast });
+  await first.app.stop();
+  clock.advance(2 * 60 * MINUTE);
+  icecast.start('/radio.mp3', { name: 'Radio Gladys', title: 'Artist 1 - Title 1' });
+  clock.advance(MINUTE);
+  const second = await createWorld({ clock, icecast, dataDir: first.dataDir });
+  t.after(() => second.app.stop());
+  assert.deepEqual(
+    second.fake.sceneEvents.map((event) => event.key),
+    [TRIGGERS.STOPPED, TRIGGERS.STARTED],
+  );
+  assert.equal(events(second, TRIGGERS.STOPPED)[0].data.duration_minutes, 120);
+  assert.equal(second.hub.mountView('/radio.mp3').uptimeMinutes, 1);
+});
+
+test('a new mount point with a title: started, then the song', async (t) => {
+  const world = await addedWorld(t);
+  world.icecast.start('/jazz', { title: 'Artist 5 - Title 5' });
+  await world.hub.pollNow();
+  assert.deepEqual(
+    world.fake.sceneEvents.map((event) => event.key),
+    [TRIGGERS.STARTED, TRIGGERS.TRACK],
+  );
+});
+
+test('two mount points never share an external id', async (t) => {
+  const icecast = new FakeIcecast();
+  icecast.start('/live/a b', {});
+  icecast.start('/live_a_b', {});
+  const world = await createWorld({ icecast });
+  t.after(() => world.app.stop());
+  const ids = world.fake.discoveredDevices.map((device) => device.external_id);
+  assert.equal(new Set(ids).size, 3);
+  assert.ok(ids.some((id) => id.endsWith(':mount:live_2fa_20b')));
+  assert.equal(world.hub.mountFor(idsOf(world, '/live_a_b').device), '/live_a_b');
+});

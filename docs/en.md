@@ -89,10 +89,9 @@ gives the name of the stream.
   title. Also fires for a new mount point on a server already watched.
 - **A stream stops**: the mount point has been off air for a minute (or Icecast
   silent), with the duration of the stream in minutes.
-- **A new song plays**: the source sends another title, with the song, the
-  artist and the title.
+- **A new song plays**: the source sends another title (also when a stream starts with a title), with the song, the artist and the title.
 - **Listeners reach a threshold**: choose 1, 5, 10, 25, 50, 100, 250, 500 or
-  1000; fires once a day when the listeners of the mount point reach it. 1
+  1000; fires when the listeners of the mount point reach it, at most once a day (a threshold already passed at midnight by a stream on air is not announced again). 1
   means "someone is listening".
 
 The integration keeps what it saw: a restart of Gladys does not announce a

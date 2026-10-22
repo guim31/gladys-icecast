@@ -81,10 +81,18 @@ export const MAX_BITRATE = 10_000;
 export const MAX_UPTIME_MINUTES = 525_600; // a year
 
 /**
- * The platform id of a mount point: its path without the leading slash, the
- * characters an external id cannot hold replaced ("/radio.mp3" → "radio.mp3").
+ * The platform id of a mount point: its path without the leading slash, every
+ * byte outside [A-Za-z0-9.-] written `_xx` in hex, so that two mount points
+ * never share an id ("/radio.mp3" → "radio.mp3", "/live/a b" → "live_2fa_20b").
  */
-export const mountSlug = (mount) => mount.replace(/^\/+/, '').replace(/[^A-Za-z0-9._-]/g, '_');
+export const mountSlug = (mount) =>
+  [...Buffer.from(mount.replace(/^\/+/, ''), 'utf8')]
+    .map((byte) =>
+      /[A-Za-z0-9.-]/.test(String.fromCharCode(byte))
+        ? String.fromCharCode(byte)
+        : `_${byte.toString(16).padStart(2, '0')}`,
+    )
+    .join('');
 
 export const mountIds = (gladys, mount) => gladys.externalIds(DEVICE_TYPE, mountSlug(mount));
 

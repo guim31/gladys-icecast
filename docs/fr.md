@@ -97,11 +97,9 @@ lequel), et donne le nom du flux.
   serveur déjà suivi.
 - **Un flux s'arrête** : le point de montage n'émet plus depuis une minute (ou
   Icecast ne répond plus), avec la durée du flux en minutes.
-- **Un nouveau titre passe** : la source envoie un autre titre, avec le titre
-  complet, l'artiste et le titre.
+- **Un nouveau titre passe** : la source envoie un autre titre (aussi quand un flux démarre avec un titre), avec le titre complet, l'artiste et le titre.
 - **Les auditeurs atteignent un seuil** : choisissez 1, 5, 10, 25, 50, 100,
-  250, 500 ou 1000 ; se déclenche une fois par jour quand les auditeurs du
-  point de montage l'atteignent. 1 veut dire « quelqu'un écoute ».
+  250, 500 ou 1000 ; se déclenche quand les auditeurs du point de montage l'atteignent, une fois par jour au plus (un seuil déjà dépassé à minuit par un flux à l'antenne n'est pas réannoncé). 1 veut dire « quelqu'un écoute ».
 
 L'intégration garde ce qu'elle a vu : un redémarrage de Gladys n'annonce pas
 deux fois un flux ou un seuil, et un titre commencé entre-temps est annoncé une

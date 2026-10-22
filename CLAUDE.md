@@ -212,8 +212,7 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   points de montage où une source diffuse sont listés (ni les montages `<hidden>`, ni ceux sans
   source) : « hors antenne » = absent de la liste, confirmé après 60 s (`graceMs`).
 - **Point de montage** : chemin de `listenurl` (l'hôte est le `<hostname>` de la configuration
-  d'Icecast, souvent `localhost` : ne jamais s'en servir pour joindre le serveur). Identifiant de
-  l'appareil `mount:<chemin sans « / », caractères hors [A-Za-z0-9._-] remplacés par « _ »>`.
+  d'Icecast, souvent `localhost` : ne jamais s'en servir pour joindre le serveur). Identifiant de l'appareil `mount:<chemin sans le premier « / », chaque octet hors [A-Za-z0-9.-] écrit `_xx` en hexadécimal>` (injectif : `/live/a b` et `/live_a_b` restent distincts).
   Les points de montage vus sont gardés dans `/data` (un flux arrêté reste un appareil), oubliés
   après 30 jours sans être vus s'ils ne sont pas des appareils dans Gladys.
 - **Titre** : une source MP3 (ffmpeg, BUTT…) envoie un seul `title` « Artiste - Titre » (mise à jour
@@ -221,6 +220,14 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   `source:<mot de passe>` répond « Mountpoint will not accept URL updates ») ; une source Ogg/Opus
   envoie `artist` et `title` à part. Le code coupe au premier « - » quand `artist` manque. Sans
   métadonnées, `title` est absent.
+- **Transitions** (relecture du 22/10) : une première lecture ratée ne pose rien (sinon la suivante
+  annonce tous les flux) ; au premier passage après un redémarrage de l'intégration, un
+  `stream_start_iso8601` postérieur de plus de `graceMs` au départ connu = flux relancé entre-temps
+  (`stream_stopped` puis `stream_started`) ; un flux hors antenne à minuit repart de zéro (pic et
+  seuils), un flux à l'antenne garde ses seuils déjà atteints ; un nouveau titre au démarrage
+  déclenche aussi `track_changed`. Le cœur convertit lui-même les filtres de déclencheur selon le
+  type du champ (`coerceSceneValue` de `publishSceneEvent`) : `threshold` numérique contre un
+  `select` texte ne pose pas de problème.
 - **Débit** : absent pour une source MP3 de ffmpeg ; `ice-bitrate` (kb/s) et `audio_bitrate` (b/s)
   pour Ogg. Sans valeur, la fonctionnalité Débit ne reçoit rien (pas de faux 0).
 - `server_name` vaut « Unspecified name » quand la source n'en envoie pas : traité comme vide.

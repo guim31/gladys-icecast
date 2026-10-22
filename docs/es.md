@@ -95,11 +95,9 @@ el nombre del flujo.
   vigilado.
 - **Se detiene un flujo**: el punto de montaje lleva un minuto sin emitir (o
   Icecast no responde), con la duración del flujo en minutos.
-- **Suena una nueva canción**: la fuente envía otro título, con la canción, el
-  artista y el título.
+- **Suena una nueva canción**: la fuente envía otro título (también cuando un flujo empieza con un título), con la canción, el artista y el título.
 - **Los oyentes alcanzan un umbral**: elija 1, 5, 10, 25, 50, 100, 250, 500 o
-  1000; se dispara una vez al día cuando los oyentes del punto de montaje lo
-  alcanzan. 1 significa «alguien está escuchando».
+  1000; se dispara cuando los oyentes del punto de montaje lo alcanzan, como máximo una vez al día (un umbral ya superado a medianoche por un flujo en antena no se vuelve a anunciar). 1 significa «alguien está escuchando».
 
 La integración guarda lo que ha visto: un reinicio de Gladys no anuncia dos
 veces un flujo o un umbral, y una canción empezada mientras tanto se anuncia

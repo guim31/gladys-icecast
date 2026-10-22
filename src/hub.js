@@ -113,6 +113,9 @@ export class IcecastHub {
     this.saved = emptySaved();
     this.pollTimer = null;
     this.stopped = false;
+    // Until the first successful read after a (re)start of the integration:
+    // a stream may have stopped and started again while it was not running.
+    this.resuming = true;
     // What fails again at every cycle (Gladys refusing, the reading loop):
     // one line when it starts, one when it ends.
     this.problems = new ProblemLog(logger);
@@ -280,16 +283,26 @@ export class IcecastHub {
     const now = this.now();
     const events = [];
     let dirty = false;
-    // The first read of a server only sets the states: no event.
+    // The first successful read of a server only sets the states: no event.
+    // A failed one changes nothing, or the next success would announce
+    // every stream as new.
     const firstRead = !this.saved.known || this.saved.url !== this.config.url;
     if (firstRead) {
+      if (this.error) {
+        await this.publishStates();
+        return;
+      }
       this.saved = { known: true, url: this.config.url, mounts: {} };
       dirty = true;
+    }
+    const resuming = this.resuming && !this.error;
+    if (resuming) {
+      this.resuming = false;
     }
     const mounts = new Set([...this.mounts.keys(), ...Object.keys(this.saved.mounts)]);
     for (const mount of mounts) {
       const source = this.error ? null : (this.mounts.get(mount) ?? null);
-      dirty = this.transition(mount, source, now, events, firstRead) || dirty;
+      dirty = this.transition(mount, source, now, events, { firstRead, resuming }) || dirty;
     }
     dirty = this.forgetOld(now) || dirty;
     if (dirty) {
@@ -326,7 +339,7 @@ export class IcecastHub {
    * concurrent read cannot interleave.
    * @returns {boolean} whether the saved state changed
    */
-  transition(mount, source, now, events, firstRead) {
+  transition(mount, source, now, events, { firstRead = false, resuming = false } = {}) {
     const day = dayOf(now);
     let saved = this.saved.mounts[mount];
     const base = () => ({
@@ -352,6 +365,7 @@ export class IcecastHub {
         // A new mount point on a server already watched: a stream starts.
         logger.info(`${mount}: on air`);
         events.push([TRIGGERS.STARTED, { ...base(), text: saved.title }]);
+        this.trackEvent(source, events, base);
         this.milestoneEvents(saved, source, events, base, []);
       }
       return true;
@@ -370,6 +384,28 @@ export class IcecastHub {
       if (now - (saved.seenAt ?? 0) >= 24 * 3600_000) {
         set('seenAt', now);
       }
+    }
+
+    // On air before this read (a short gap within the grace included): the
+    // same stream, its thresholds of the day stand.
+    const wasOnline = saved.online === true;
+
+    // The integration was not running: the stream it knew may have stopped
+    // and started again meanwhile (Icecast gives the start of the stream).
+    if (
+      resuming &&
+      source?.since &&
+      saved.online &&
+      saved.since &&
+      source.since - saved.since > this.timings.graceMs
+    ) {
+      const minutes = Math.max(0, Math.round((source.since - saved.since) / MINUTE));
+      logger.info(`${mount}: restarted while the integration was stopped`);
+      events.push([TRIGGERS.STOPPED, { ...base(), duration_minutes: minutes }]);
+      events.push([TRIGGERS.STARTED, { ...base(), text: songText(source.song) }]);
+      saved.since = Math.min(now, source.since);
+      delete saved.missingSince;
+      dirty = true;
     }
 
     // On air or not.
@@ -406,13 +442,15 @@ export class IcecastHub {
       }
     }
 
-    // The listeners of the day. Only on a reading of the mount point: a failed
-    // reading at midnight would forget the thresholds already reached.
-    if (saved.day !== day && source) {
+    // The listeners of the day. A stream on air changes day on a reading of
+    // it only: a failed reading at midnight would forget the thresholds
+    // already reached. A stream off air starts the day from zero.
+    if (saved.day !== day && (source || !saved.online)) {
       saved.day = day;
-      saved.peak = source.listeners;
-      // Already reached at midnight: nothing to announce.
-      saved.milestones = LISTENER_MILESTONES.filter((m) => saved.peak >= m);
+      saved.peak = source ? source.listeners : 0;
+      // Already reached at midnight by a stream on air: nothing to announce.
+      saved.milestones =
+        source && wasOnline ? LISTENER_MILESTONES.filter((m) => saved.peak >= m) : [];
       dirty = true;
     }
     if (source) {
@@ -428,17 +466,20 @@ export class IcecastHub {
     if (title && title !== saved.title) {
       saved.title = title;
       dirty = true;
-      events.push([
-        TRIGGERS.TRACK,
-        {
-          ...base(),
-          text: title,
-          artist: source.song.artist,
-          title: source.song.title,
-        },
-      ]);
+      this.trackEvent(source, events, base);
     }
     return dirty;
+  }
+
+  /** "A new song plays", for a source with a title. */
+  trackEvent(source, events, base) {
+    const text = songText(source.song);
+    if (text) {
+      events.push([
+        TRIGGERS.TRACK,
+        { ...base(), text, artist: source.song.artist, title: source.song.title },
+      ]);
+    }
   }
 
   /** The thresholds newly reached by a mount point. */
@@ -485,7 +526,8 @@ export class IcecastHub {
       fresh: this.error === null && this.readAt !== 0,
       online,
       listeners: source?.listeners ?? 0,
-      peak: saved?.peak ?? source?.listeners ?? 0,
+      // A day not started yet (no reading since midnight): no peak of yesterday.
+      peak: saved && saved.day === dayOf(this.now()) ? saved.peak : (source?.listeners ?? 0),
       song: source?.song ?? null,
       bitrate: source?.bitrate ?? null,
       uptimeMinutes:

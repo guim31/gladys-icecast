@@ -96,11 +96,9 @@ Mountpoint) und liefert den Namen des Streams.
   beobachteten Server aus.
 - **Ein Stream stoppt**: Der Mountpoint ist seit einer Minute nicht auf
   Sendung (oder Icecast stumm), mit der Dauer des Streams in Minuten.
-- **Ein neuer Titel läuft**: Die Quelle sendet einen anderen Titel, mit Titel,
-  Interpret und Songtitel.
+- **Ein neuer Titel läuft**: Die Quelle sendet einen anderen Titel (auch wenn ein Stream mit einem Titel startet), mit Titel, Interpret und Songtitel.
 - **Zuhörer erreichen eine Schwelle**: Wähle 1, 5, 10, 25, 50, 100, 250, 500
-  oder 1000; löst einmal pro Tag aus, wenn die Zuhörer des Mountpoints sie
-  erreichen. 1 heißt „jemand hört zu“.
+  oder 1000; löst aus, wenn die Zuhörer des Mountpoints sie erreichen, höchstens einmal pro Tag (eine Schwelle, die ein Stream auf Sendung um Mitternacht schon überschritten hat, wird nicht erneut gemeldet). 1 heißt „jemand hört zu“.
 
 Die Integration behält, was sie gesehen hat: Ein Neustart von Gladys meldet
 einen Stream oder eine Schwelle nicht zweimal, und ein zwischenzeitlich
