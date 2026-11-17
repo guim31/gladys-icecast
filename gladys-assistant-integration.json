@@ -8,8 +8,8 @@
     "de": "Deine Icecast-Streams in Gladys: Sendestatus, Zuhörer, aktueller Titel, Szenen bei jeder Änderung.",
     "es": "Sus flujos Icecast en Gladys: antena, oyentes, canción actual y escenas en cada cambio."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/guim31/gladys-icecast:1.0.0",
+  "version": "1.0.1",
+  "docker_image": "ghcr.io/guim31/gladys-icecast:1.0.1",
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-icecast/main/cover.png",
   "categories": ["multimedia"],

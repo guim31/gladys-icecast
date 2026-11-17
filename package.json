@@ -1,6 +1,6 @@
 {
   "name": "gladys-icecast",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Icecast streaming server in Gladys Assistant: mount points, listeners, current title, scene triggers and actions, a dashboard widget.",
   "type": "module",
